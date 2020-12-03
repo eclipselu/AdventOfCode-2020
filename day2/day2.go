@@ -10,20 +10,32 @@ import (
 )
 
 type password struct {
-	Min int
-	Max int
-	Letter rune
+	Min    int
+	Max    int
+	Letter byte
 	Phrase string
 }
 
 func (p *password) IsValid() bool {
 	cnt := 0
-	for _, ch := range p.Phrase {
+	for i := 0; i < len(p.Phrase); i++ {
+		ch := p.Phrase[i]
 		if ch == p.Letter {
 			cnt++
 		}
 	}
 	return cnt >= p.Min && cnt <= p.Max
+}
+
+func (p *password) IsValid2() bool {
+	cnt := 0
+	if p.Min >= 1 && p.Min <= len(p.Phrase) && p.Phrase[p.Min-1] == p.Letter {
+		cnt++
+	}
+	if p.Max >= 1 && p.Max <= len(p.Phrase) && p.Phrase[p.Max-1] == p.Letter {
+		cnt++
+	}
+	return cnt == 1
 }
 
 func readInput(fn string) []password {
@@ -33,20 +45,22 @@ func readInput(fn string) []password {
 	}
 	defer file.Close()
 
-	var nums []int
+	var pwlist []password
 	reader := bufio.NewScanner(file)
 	for reader.Scan() {
-
-		num, _ := strconv.Atoi(reader.Text())
-		nums = append(nums, num)
+		pwd, err := parseLine(reader.Text())
+		if err != nil {
+			panic(err)
+		}
+		pwlist = append(pwlist, pwd)
 	}
 
-	return nums
+	return pwlist
 }
 
 func isInt(s string) bool {
 	_, err := strconv.Atoi(s)
-	return err != nil
+	return err == nil
 }
 
 func parseLine(line string) (password, error) {
@@ -54,19 +68,33 @@ func parseLine(line string) (password, error) {
 		return r == '-' || r == ':' || unicode.IsSpace(r)
 	})
 	if len(splits) != 4 {
-		return password{}, fmt.Errorf("invalid line: %v", line)
+		return password{}, fmt.Errorf("splits should be 4, invalid line: %v", line)
 	}
 
-	min, max, letter, phrase := splits[0], splits[1], splits[2], splits[3]
+	if !isInt(splits[0]) || !isInt(splits[1]) || len(splits[2]) != 1 {
+		return password{}, fmt.Errorf("invalid format: %v", splits)
+	}
 
+	min, _ := strconv.Atoi(splits[0])
+	max, _ := strconv.Atoi(splits[1])
+	letter, phrase := splits[2][0], splits[3]
+
+	return password{
+		Min:    min,
+		Max:    max,
+		Letter: letter,
+		Phrase: phrase,
+	}, nil
 }
 
 func main() {
-	pwd := &password{
-		Min: 1,
-		Max: 2,
-		Letter: 'c',
-		Phrase: "abccccd",
+	pwlist := readInput("day2.in")
+	count := 0
+	for _, pwd := range pwlist {
+		// if pwd.IsValid() {
+		if pwd.IsValid2() {
+			count++
+		}
 	}
-	fmt.Println(pwd, pwd.IsValid())
+	fmt.Println(count)
 }
