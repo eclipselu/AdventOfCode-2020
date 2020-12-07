@@ -127,7 +127,6 @@ func readInput(fn string) []passport {
 	for reader.Scan() {
 		line := reader.Text()
 		elem := parseEntry(line)
-		// fmt.Printf("%+v\n", elem)
 		passports = append(passports, elem)
 	}
 	return passports
